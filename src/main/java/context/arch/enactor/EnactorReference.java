@@ -43,6 +43,8 @@ public class EnactorReference {
 	 */
 	protected List<AttributeEvalParser<?>> attEvalParsers;
 	protected List<ServiceInput> serviceInputs;
+	
+	protected boolean _break;
 
 	/**
 	 * 
@@ -64,6 +66,15 @@ public class EnactorReference {
 		this.serviceInputs = new ArrayList<ServiceInput>(serviceInputs);
 	}
 	
+	public EnactorReference(Enactor enactor, AbstractQueryItem<?,?> conditionQuery, 
+			String outcomeValue, 
+			List<AttributeEvalParser<?>> attEvalParsers, 
+			List<ServiceInput> serviceInputs, 
+			boolean _break) {
+		this(enactor, conditionQuery, outcomeValue, attEvalParsers, serviceInputs);
+		this._break = _break;
+	}
+	
 	/**
 	 * @param outcomeValue
 	 * @param logicalRule
@@ -76,6 +87,11 @@ public class EnactorReference {
 		
 		this.attEvalParsers = new ArrayList<AttributeEvalParser<?>>();
 		this.serviceInputs = new ArrayList<ServiceInput>();
+	}
+	
+	public EnactorReference(Enactor enactor, AbstractQueryItem<?,?> conditionQuery, String outcomeValue, boolean _break) {
+		this(enactor, conditionQuery, outcomeValue);
+		this._break = _break;
 	}
 	
 	public void addServiceInput(ServiceInput serviceInput) {
@@ -179,7 +195,7 @@ public class EnactorReference {
 		}
 		
 		// subclass enactor may override attribute values
-		outAtts = conditionSatisfied(inWidgetState, outAtts);
+		outAtts = conditionSatisfied(enactor.getInWidgetState(), outAtts);
 		
 		// send request to update Out Widget with new data
 		enactor.updateOutWidget(outAtts); 
@@ -198,9 +214,8 @@ public class EnactorReference {
         		inputAtts.add(outAtts.get(attName));
         	}
         	
-	        enactor.executeWidgetService(
-	        		enactor.widgetComponentDescriptions[Enactor.OUT_WIDGET_INDEX], 
-	        		serviceInput);
+        	for(ComponentDescription cd:enactor.widgetComponentDescriptions[Enactor.OUT_WIDGET_INDEX])
+        		enactor.executeWidgetService(cd,serviceInput);
         }
 	}
 	

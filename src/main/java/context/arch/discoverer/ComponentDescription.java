@@ -18,6 +18,7 @@ import context.arch.comm.DataObjects;
 import context.arch.service.helper.ServiceDescription;
 import context.arch.storage.Attribute;
 import context.arch.storage.AttributeNameValue;
+import context.arch.storage.AttributeNameValuePin;
 import context.arch.storage.Attributes;
 import context.arch.subscriber.Callback;
 import context.arch.subscriber.Subscriber;
@@ -912,6 +913,7 @@ public class ComponentDescription extends Object implements Cloneable {
 		return nonConstantAttributes;
 	}
 	
+	
 	/**
 	 * Return non-constant attributes as a collection of AttributeNameValue<?>,
 	 * including only those with values (i.e. AttributeNameValue<?> not just Attribute<?>).
@@ -1123,6 +1125,7 @@ public class ComponentDescription extends Object implements Cloneable {
 	public DataObject getBasicDataObject() {
 		DataObjects v1 = new DataObjects();
 		v1.add(new DataObject(Discoverer.ID, this.id));
+		v1.add(new DataObject(Discoverer.COMPONENT_CLASSNAME, this.classname)); // adicionado o valor do classe name que sera usado na verificacao do subscribe
 		v1.add(new DataObject(Discoverer.HOSTNAME, this.hostname));
 		v1.add(new DataObject(Discoverer.PORT, Integer.toString(this.port)));
 		v1.add(new DataObject(Discoverer.TYPE, this.type));
@@ -1157,13 +1160,24 @@ public class ComponentDescription extends Object implements Cloneable {
 	public boolean equals(ComponentDescription otherComponent) {
 		ComponentDescription c1 = this;
 		ComponentDescription c2 = otherComponent;
-
-		if (	!c1.id.equals(c2.id) || !c1.classname.equals(c2.classname) || !c1.hostaddress.equals(c2.hostaddress) ||
-				!c1.hostname.equals(c2.hostname) ||  !c1.type.equals(c2.type) || !c1.version.equals(c2.version) ||
-				c1.port != c2.port) {
+				
+		if ( 
+				!((c1.id == null && c2.id == null) || (c1.id != null && c2.id != null && c1.id.equals(c2.id))) 
+				|| !((c1.classname == null && c2.classname == null) || (c1.classname != null && c2.classname != null && c1.classname.equals(c2.classname)))
+				|| !((c1.hostaddress == null && c2.hostaddress == null) || (c1.hostaddress != null && c2.hostaddress != null && c1.hostaddress.equals(c2.hostaddress)))
+				|| !((c1.hostname == null && c2.hostname == null) || (c1.hostname != null && c2.hostname != null && c1.hostname.equals(c2.hostname)))
+				|| !((c1.type == null && c2.type == null) || (c1.type != null && c2.type != null && c1.type.equals(c2.type)))
+				|| !((c1.version == null && c2.version == null) || (c1.version != null && c2.version != null && c1.version.equals(c2.version)))
+//				|| c1.port != c2.port
+			) {
 			return false;
 		}
 		return true;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		return equals((ComponentDescription) o);
 	}
 
 	@Override
@@ -1187,6 +1201,38 @@ public class ComponentDescription extends Object implements Cloneable {
 		comp.outAttributes.putAll(outAttributes);
 		
 		return comp;
+	}
+	
+	
+	public ComponentDescription updateAttributes(ComponentDescription cd) {
+		Attribute<?> current_timestamp = nonConstantAttributes.get("timestamp");
+		Attribute<?> new_timestamp = cd.getNonConstantAttributes().get("timestamp");		
+		if (new_timestamp instanceof AttributeNameValue<?> && current_timestamp instanceof AttributeNameValue<?> && ((AttributeNameValue<Long>) new_timestamp).getValue() >= ((AttributeNameValue<Long>) current_timestamp).getValue()) {		
+			for (Attribute<?> current : cd.getNonConstantAttributes().values()) {
+				if (current instanceof AttributeNameValuePin<?> || current instanceof AttributeNameValue<?>) {
+					Attribute<?> target = nonConstantAttributes.get(current.getName());
+					if (target instanceof AttributeNameValuePin<?>) {
+						nonConstantAttributes.put(current.getName(), ((AttributeNameValuePin<?>) target).cloneWithNewValue(((AttributeNameValue<?>) current).getValue())); 
+					} else if (target instanceof AttributeNameValue<?>) {
+						nonConstantAttributes.put(current.getName(), ((AttributeNameValue<?>) target).cloneWithNewValue(((AttributeNameValue<?>) current).getValue())); 
+					} else {
+						nonConstantAttributes.put(current.getName(), current);
+					}
+				}
+			}
+		}
+//		for (Attribute<?> attribute : cd.getAllAttributes().values()) {
+//			if(this.getAllAttributes().containsName(attribute.getName())) { 
+//				if (this.getAllAttributes().get(attribute.getName()) instanceof AttributeNameValue<?> && attribute instanceof AttributeNameValue<?>) {
+//					((AttributeNameValue) this.getAllAttributes().get(attribute.getName())).setValue(((AttributeNameValue) attribute).getValue());
+//				}
+//			}
+//		}
+		return this;
+	}
+	
+	public Attributes getConstantAttributesFull() {
+		return constantAttributes;
 	}
 
 }

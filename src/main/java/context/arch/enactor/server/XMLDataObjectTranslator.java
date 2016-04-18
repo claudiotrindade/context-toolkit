@@ -5,7 +5,6 @@ import java.io.StringWriter;
 
 import org.jdom.Document;
 import org.jdom.Element;
-import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 
 import context.arch.comm.DataObject;
@@ -27,10 +26,10 @@ public class XMLDataObjectTranslator {
 		StringWriter sw = new StringWriter();
 
 		try {
-			Format format = Format.getPrettyFormat();
-			format.setOmitDeclaration(true);
-
-			XMLOutputter xmlOutputter = new XMLOutputter(format);
+			XMLOutputter xmlOutputter = new XMLOutputter();
+			xmlOutputter.setOmitDeclaration(true);
+			xmlOutputter.setNewlines(true);
+			xmlOutputter.setIndent(true);
 			xmlOutputter.output(d,sw);
 		} catch (IOException ioe) {}
 
